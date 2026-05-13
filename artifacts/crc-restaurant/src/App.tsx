@@ -38,8 +38,8 @@ function Router() {
           <Route path="/menu" component={Menu} />
           <Route path="/cart" component={Cart} />
           <Route path="/checkout" component={Checkout} />
-          <Route path="/tracking/:orderId" component={Tracking} />
-          <Route path="/reviews" component={Reviews} />
+          <Route path="/tracking/:orderId?" component={Tracking} />
+          <Route path="/reviews/:orderId?" component={Reviews} />
           <Route path="/success" component={Success} />
           <Route component={NotFound} />
         </Switch>

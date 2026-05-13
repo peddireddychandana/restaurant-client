@@ -7,7 +7,7 @@ import { useCreateOrder } from "@workspace/api-client-react";
 
 export default function Checkout() {
   const [, setLocation] = useLocation();
-  const { items, tableNumber, setTableNumber, getSubtotal, getGST, getTotal, clearCart } = useCartStore();
+  const { items, tableNumber, setTableNumber, setLastOrderId, getSubtotal, getGST, getTotal, clearCart } = useCartStore();
   const subtotal = getSubtotal();
   const gst = getGST();
   const total = getTotal();
@@ -43,12 +43,13 @@ export default function Checkout() {
         customerName: form.customerName,
         customerPhone: form.customerPhone,
         cookingNotes: form.cookingNotes || undefined,
-        items: items.map((i) => ({ menuItemId: i.menuItemId, quantity: i.quantity, notes: i.notes })),
+        items: items.map((i) => ({ menuItemId: i.menuItemId, quantity: i.quantity, name: i.name, price: i.price, image: i.imageUrl, notes: i.notes })),
       },
     }, {
       onSuccess: (order) => {
+        setLastOrderId(order.id);
         clearCart();
-        setLocation(`/success?orderId=${order.id}`);
+        setLocation(`/tracking/${order.id}`);
       },
     });
   };

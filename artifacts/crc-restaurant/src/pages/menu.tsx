@@ -1,9 +1,16 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Star, Plus, Minus, Leaf, Flame, UtensilsCrossed, X } from "lucide-react";
+import { Search, Star, Plus, Minus, Leaf, Flame, UtensilsCrossed, X, ImageIcon } from "lucide-react";
 import { useGetMenuCategories, useGetMenuItems } from "@workspace/api-client-react";
 import { useCartStore } from "@/store/cartStore";
 import { useCartDrawerStore } from "@/store/cartDrawerStore";
+
+const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000";
+function imageUrl(path: string | null | undefined) {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  return `${apiBase}/api/storage${path}`;
+}
 
 // All menu data as fallback
 const MENU_DATA = [
@@ -126,12 +133,12 @@ export default function Menu() {
   const getCartQty = (id: number) => cartItems.find((i) => i.menuItemId === id)?.quantity ?? 0;
 
   const handleAdd = (item: typeof MENU_DATA[0]) => {
-    addItem({ menuItemId: item.id, name: item.name, price: item.price, quantity: 1, isVeg: item.isVeg, imageUrl: null });
+    addItem({ menuItemId: item.id, name: item.name, price: item.price, quantity: 1, isVeg: item.isVeg, imageUrl: (item as any).imageUrl || null });
     openDrawer();
   };
 
   const handleIncrease = (item: typeof MENU_DATA[0]) => {
-    addItem({ menuItemId: item.id, name: item.name, price: item.price, quantity: 1, isVeg: item.isVeg, imageUrl: null });
+    addItem({ menuItemId: item.id, name: item.name, price: item.price, quantity: 1, isVeg: item.isVeg, imageUrl: (item as any).imageUrl || null });
   };
 
   const handleDecrease = (id: number) => {
@@ -223,23 +230,34 @@ export default function Menu() {
                   key={item.id}
                   layout
                   initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  animate={{ opacity: item.isAvailable === false ? 0.5 : 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                  whileHover={{ y: -4 }}
+                  whileHover={item.isAvailable === false ? undefined : { y: -4 }}
                   data-testid={`menu-item-${item.id}`}
-                  className="rounded-2xl overflow-hidden border border-white/5 group cursor-pointer"
+                  className={`rounded-2xl overflow-hidden border border-white/5 ${item.isAvailable === false ? "pointer-events-none" : "group cursor-pointer"}`}
                   style={{
-                    background: "linear-gradient(145deg, rgba(17,17,17,0.9), rgba(5,5,5,0.95))",
+                    background: item.isAvailable === false
+                      ? "linear-gradient(145deg, rgba(30,30,30,0.9), rgba(20,20,20,0.95))"
+                      : "linear-gradient(145deg, rgba(17,17,17,0.9), rgba(5,5,5,0.95))",
                     boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
                   }}
                 >
                   {/* Image area */}
                   <div className="h-32 relative overflow-hidden flex-shrink-0"
                     style={{ background: item.isVeg ? "linear-gradient(135deg, #021402 0%, #041404 50%, #030303 100%)" : "linear-gradient(135deg, #200808 0%, #2d0a0a 50%, #0a0a0a 100%)" }}>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <UtensilsCrossed className="w-12 h-12" style={{ color: item.isVeg ? "rgba(34,197,94,0.15)" : "rgba(255,43,43,0.2)" }} />
-                    </div>
+                    {(item as any).imageUrl ? (
+                      <img
+                        src={imageUrl((item as any).imageUrl)}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <UtensilsCrossed className="w-12 h-12" style={{ color: item.isVeg ? "rgba(34,197,94,0.15)" : "rgba(255,43,43,0.2)" }} />
+                      </div>
+                    )}
                     {/* Gradient overlay for depth */}
                     <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.8) 100%)" }} />
                     <div className="absolute inset-0 group-hover:opacity-100 opacity-0 transition-opacity duration-500"
@@ -254,6 +272,13 @@ export default function Menu() {
                       <div className="absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wide"
                         style={{ background: "linear-gradient(135deg, #FF2B2B, #C1121F)" }}>
                         🔥 Hot
+                      </div>
+                    )}
+                    {item.isAvailable === false && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <span className="px-3 py-1 rounded text-xs font-bold text-white uppercase tracking-wider bg-gray-800/80">
+                          Unavailable
+                        </span>
                       </div>
                     )}
                   </div>
@@ -282,7 +307,11 @@ export default function Menu() {
                         ₹{item.price}
                       </span>
 
-                      {qty === 0 ? (
+                      {item.isAvailable === false ? (
+                        <span className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-muted-foreground border border-white/10">
+                          Unavailable
+                        </span>
+                      ) : qty === 0 ? (
                         <motion.button
                           whileTap={{ scale: 0.9 }}
                           onClick={() => handleAdd(item)}

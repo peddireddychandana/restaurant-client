@@ -20,6 +20,7 @@ export function Navbar() {
   const navLinks = [
     { href: "/", label: "Home" },
     { href: "/menu", label: "Menu" },
+    { href: "/tracking", label: "Track Order" },
     { href: "/reviews", label: "Reviews" },
   ];
 

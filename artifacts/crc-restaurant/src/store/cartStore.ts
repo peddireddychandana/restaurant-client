@@ -14,11 +14,13 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[];
   tableNumber: number | null;
+  lastOrderId: number | null;
   addItem: (item: CartItem) => void;
   removeItem: (menuItemId: number) => void;
   updateQuantity: (menuItemId: number, quantity: number) => void;
   clearCart: () => void;
   setTableNumber: (tableNumber: number) => void;
+  setLastOrderId: (id: number) => void;
   getTotal: () => number;
   getGST: () => number;
   getSubtotal: () => number;
@@ -29,6 +31,7 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       tableNumber: null,
+      lastOrderId: null,
       addItem: (item) =>
         set((state) => {
           const existing = state.items.find((i) => i.menuItemId === item.menuItemId);
@@ -60,6 +63,7 @@ export const useCartStore = create<CartStore>()(
         }),
       clearCart: () => set({ items: [] }),
       setTableNumber: (tableNumber) => set({ tableNumber }),
+      setLastOrderId: (id) => set({ lastOrderId: id }),
       getSubtotal: () => {
         const { items } = get();
         return items.reduce((total, item) => total + item.price * item.quantity, 0);
